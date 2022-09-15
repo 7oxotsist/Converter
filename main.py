@@ -5,7 +5,6 @@ def App():
     Process()
     CreateMainMenu()
 
-
 def CreateMainMenu():
     dpg.create_context()
     with dpg.font_registry():
@@ -16,25 +15,27 @@ def CreateMainMenu():
     with dpg.texture_registry():
         dpg.add_static_texture(width=width, height=height, default_value=data, tag="arrow")
 
-    with dpg.window(tag="Primary Window"):
-        with dpg.menu_bar():
-            dpg.add_menu_item(label="Cockverter", callback=CreateConverterWindow)
 
-    dpg.create_viewport(title='Custom Title', width=800, height=600)
+    with dpg.window(label="Converter", width=320, height=320, no_resize=True, no_close=True, no_scrollbar=True, no_move=True, autosize=True):
+        with dpg.group():
+            dpg.add_combo(items=keylog, tag="FirstVal")
+            dpg.add_input_float(tag="FloatVal")
+            dpg.add_image("arrow", indent=100)
+            dpg.add_combo(items=keylog, tag="SecVal")
+            dpg.add_button(label="Convert", callback=Convert)
+            dpg.add_text(tag="ConvRes")
+
+
+    with dpg.window(label="", pos=(0,320), height=240, width=336, no_title_bar=True):
+        pass
+
+    with dpg.window(label="", pos=(336,0), height=560, width=448, no_title_bar=True):
+        pass
+    dpg.create_viewport(title=' ', width=800, height=599)
     dpg.setup_dearpygui()
     dpg.show_viewport()
-    dpg.set_primary_window("Primary Window", True)
     dpg.start_dearpygui()
     dpg.destroy_context()
-
-def CreateConverterWindow():
-    with dpg.window(label="Converter", width=320, height=320, tag="Conv"):
-        dpg.add_combo(items=keylog, tag="FirstVal")
-        dpg.add_input_float(tag="FloatVal")
-        dpg.add_image("arrow")
-        dpg.add_combo(items=keylog, tag="SecVal")
-        dpg.add_text(tag="ConvRes")
-        dpg.add_button(label="Convert", callback=Convert)
 
 def Process():
     global keylog, currency
@@ -63,33 +64,35 @@ def Process():
     for key in currency.keys():
         keylog.append(key)
 
-    print(keylog,currency)
+    #print(keylog,currency)
 
-def GetCurrencyIdList(cur):
-    u = 'http://www.cbr.ru/scripts/XML_val.asp?d=0'
-    res = urllib.request.urlopen(str(u))
-    dom = xml.dom.minidom.parse(res)
-    dom.normalize()
-    nodeArray = dom.getElementsByTagName("Item")
-    currency_id = {}
-    for node in nodeArray:
-        childList = node.childNodes
-        for child in childList:
-            if child.nodeName == 'Name':
-                currency_id.update({child.childNodes[0].nodeValue: 0})
-            if child.nodeName == 'ParentCode':
-                value = child.childNodes[0].nodeValue.replace('    ', '')
-                currency_id.update({list(currency_id)[-1]: value})
-    return currency_id.get(cur)
+# def GetCurrencyIdList(cur):
+#     u = 'http://www.cbr.ru/scripts/XML_val.asp?d=0'
+#     res = urllib.request.urlopen(str(u))
+#     dom = xml.dom.minidom.parse(res)
+#     dom.normalize()
+#     nodeArray = dom.getElementsByTagName("Item")
+#     currency_id = {}
+#     for node in nodeArray:
+#         childList = node.childNodes
+#         for child in childList:
+#             if child.nodeName == 'Name':
+#                 currency_id.update({child.childNodes[0].nodeValue: 0})
+#             if child.nodeName == 'ParentCode':
+#                 value = child.childNodes[0].nodeValue.replace('    ', '')
+#                 currency_id.update({list(currency_id)[-1]: value})
+#     return currency_id.get(cur)
 
 def Convert():
     First = currency[dpg.get_value("FirstVal")]
+    FirstVal = dpg.get_value("FirstVal")
     FloatValue = dpg.get_value("FloatVal")
     Second = currency[dpg.get_value("SecVal")]
-    print(First, FloatValue, Second)
+    SecondVal = dpg.get_value("SecVal")
 
-    Res = (float(First) / float(Second)) * FloatValue
-    dpg.set_value("ConvRes", Res)
+    Res = float(First) / float(Second) * FloatValue
+    Res = "{:.2f}".format(Res)
+    dpg.set_value("ConvRes", f'{FloatValue} {FirstVal} ~ {Res} {SecondVal}')
 
 if __name__ == "__main__":
     App()
