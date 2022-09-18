@@ -1,56 +1,156 @@
-import datetime
-import tkinter
-from tkinter import *
-import tkinter.ttk as ttk
-import urllib.request
-import xml.dom.minidom
-import datetime
-from datetime import *
-import matplotlib
-import dateutil.relativedelta
-import matplotlib.pyplot as plot
-###
-import matplotlib.pyplot as plt
+import dearpygui as dearpy
+import dearpygui.dearpygui as dpg, xml.dom.minidom, urllib.request
+from datetime import datetime
+def App():
+    Process()
+    CreateMainMenu()
 
-window = Tk()
-window.title("THE CALCULATOR")
-#window.resizable(width=False, height=False)
-window.geometry("1080x640")
-tab_control = ttk.Notebook(window)
-tab1 = ttk.Frame(tab_control)
-tab2 = ttk.Frame(tab_control)
-tab_control.add(tab1, text="Калькулятор валюты")
-tab_control.add(tab2, text="Динамика курса")
+def CreateMainMenu():
+    dpg.create_context()
+    with dpg.font_registry():
+        with dpg.font("Resources/SegoeUI.ttf", 20, default_font=True, id="DefFont"):
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
+            dpg.bind_font("DefFont")
+    width, height, channels, data = dpg.load_image("Resources/Arrow-down.png")
+    with dpg.texture_registry():
+        dpg.add_static_texture(width=width, height=height, default_value=data, tag="arrow")
 
-now = datetime.now()
-print('Сегодня:', now)
-print(now.year)
-if now.day < 10:
-    u = 'http://www.cbr.ru/scripts/XML_daily.asp?date_req=' + "0" + str(now.day) + '/' + '0' + str(
-        now.month) + '/' + str(
-        now.year)
-else:
-    u = 'http://www.cbr.ru/scripts/XML_daily.asp?date_req=' + str(now.day) + '/' + '0' + str(
-        now.month) + '/' + str(now.year)
-res = urllib.request.urlopen(str(u))
-dom = xml.dom.minidom.parse(res)
-dom.normalize()
-nodeArray = dom.getElementsByTagName("Valute")
-currency = {}
-count = 0
-keylog = []
-for node in nodeArray:
-    childList = node.childNodes
-    for child in childList:
-        if child.nodeName == 'Name':
-            currency.update({child.childNodes[0].nodeValue:0})
-        if child.nodeName == 'Value':
-            value = child.childNodes[0].nodeValue.replace(',', '.')
-            currency.update({list(currency)[-1]:value})
-for key in currency.keys():
-    keylog.append(key)
-print(currency)
-print(u)
+
+    with dpg.window(label="Converter", width=320, height=320, no_resize=True, no_close=True, no_scrollbar=True, no_move=True, autosize=True):
+        with dpg.group():
+            dpg.add_combo(items=keylog, tag="FirstVal")
+            dpg.add_input_float(tag="FloatVal")
+            dpg.add_image("arrow", indent=100)
+            dpg.add_combo(items=keylog, tag="SecVal")
+            dpg.add_button(label="Convert", callback=Convert)
+            dpg.add_text(tag="ConvRes")
+
+
+    with dpg.window(label="Graph", pos=(0,320), height=240, width=336, no_title_bar=True):
+        x = datetime.now()
+        nowyear = x.year
+        dpg.add_combo(items=keylog, tag="MyFirstVal")
+        dpg.add_spacer(height=10)
+        with dpg.group(horizontal=True):
+            dpg.add_combo(items=[i for i in range(1, 31)], width=75, tag="MyDay")
+            dpg.add_combo(items=[i for i in range(1, 13)], width=75, tag="MyMonth")
+            dpg.add_combo(items=[i for i in range(1990, nowyear + 1)], width=75, tag="MyYear")
+        dpg.add_spacer(height=25)
+        with dpg.group(horizontal=True):
+            dpg.add_combo(items=[i for i in range(1, 31)], width=75, tag="MyDay2")
+            dpg.add_combo(items=[i for i in range(1, 13)], width=75, tag="MyMonth2")
+            dpg.add_combo(items=[i for i in range(1990, nowyear + 1)], width=75, tag="MyYear2")
+        dpg.add_button(label="Рисуй!", callback=CreateGraphWindow)
+
+    with dpg.window(label="", pos=(336,0), height=560, width=448, no_title_bar=True):
+        pass
+    dpg.create_viewport(title=' ', width=800, height=599)
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    dpg.start_dearpygui()
+    dpg.destroy_context()
+
+def Process():
+    global keylog, currency
+    now = datetime.now()
+    print('Сегодня:', now)
+    if now.day < 10:
+        u = 'http://www.cbr.ru/scripts/XML_daily.asp?date_req=' + "0" + str(now.day) + '/' + '0' + str(now.month) + '/' + str(
+            now.year)
+    else:
+        u = 'http://www.cbr.ru/scripts/XML_daily.asp?date_req=' + str(now.day) + '/' + '0' + str(
+            now.month) + '/' + str(now.year)
+    res = urllib.request.urlopen(str(u))
+    dom = xml.dom.minidom.parse(res)
+    dom.normalize()
+    nodeArray = dom.getElementsByTagName("Valute")
+    currency = {}
+    keylog = []
+    for node in nodeArray:
+        childList = node.childNodes
+        for child in childList:
+            if child.nodeName == 'Name':
+                currency.update({child.childNodes[0].nodeValue: 0})
+            if child.nodeName == 'Value':
+                value = child.childNodes[0].nodeValue.replace(',', '.')
+                currency.update({list(currency)[-1]: value})
+    for key in currency.keys():
+        keylog.append(key)
+
+
+def ProcessForGraph():
+    MyValue = dpg.get_value("MyFirstVal")
+    id = GetCurrencyIdList(MyValue)
+    x = dpg.get_value("MyDay")
+    y = dpg.get_value("MyDay2")
+    xx = dpg.get_value("MyMonth")
+    yy = dpg.get_value("MyMonth2")
+    if x == '1' or x == '2' or x == '3' or x == '4' or x == '5' or x == '6' or x == '7' or x == '8' or x == '9':
+        x = '0' + x
+    if xx == '1' or xx == '2' or xx == '3' or xx == '4' or xx == '5' or xx == '6' or xx == '7' or xx == '8' or xx == '9':
+        xx = '0' + xx
+    if y == '1' or y == '2' or y == '3' or y == '4' or y == '5' or y == '6' or y == '7' or y == '8' or y == '9':
+        y = '0' + y
+    if yy == '1' or yy == '2' or yy == '3' or yy == '4' or yy == '5' or yy == '6' or yy == '7' or yy == '8' or yy == '9':
+        yy = '0' + yy
+    url_1 = 'https://cbr.ru/scripts/XML_dynamic.asp?date_req1=' + str(x) + '/' + str(xx) + '/' + str(dpg.get_value(
+        "MyYear")) + '&date_req2=' + str(y) + '/' + str(yy) + '/' + str(
+        dpg.get_value("MyYear2")) + '&VAL_NM_RQ=' + str(
+        id)
+    res = urllib.request.urlopen(str(url_1))
+    dom = xml.dom.minidom.parse(res)
+    dom.normalize()
+    nodeArray = dom.getElementsByTagName("Record")
+    curs_list = []
+    for node in nodeArray:
+        childList = node.childNodes
+        for child in childList:
+            if child.nodeName == 'Value':
+                curs_list.append(float(child.childNodes[0].nodeValue.replace(',', '.')))
+    return curs_list
+
+
+def ProcessX():
+    MyValue = dpg.get_value("MyFirstVal")
+    id = GetCurrencyIdList(MyValue)
+    x = dpg.get_value("MyDay")
+    y = dpg.get_value("MyDay2")
+    xx = dpg.get_value("MyMonth")
+    yy = dpg.get_value("MyMonth2")
+    if x == '1' or x == '2' or x == '3' or x == '4' or x == '5' or x == '6' or x == '7' or x == '8' or x == '9':
+        x = '0' + x
+    if xx == '1' or xx == '2' or xx == '3' or xx == '4' or xx == '5' or xx == '6' or xx == '7' or xx == '8' or xx == '9':
+        xx = '0' + xx
+    if y == '1' or y == '2' or y == '3' or y == '4' or y == '5' or y == '6' or y == '7' or y == '8' or y == '9':
+        y = '0' + y
+    if yy == '1' or yy == '2' or yy == '3' or yy == '4' or yy == '5' or yy == '6' or yy == '7' or yy == '8' or yy == '9':
+        yy = '0' + yy
+    url_1 = 'https://cbr.ru/scripts/XML_dynamic.asp?date_req1=' + str(x) + '/' + str(xx) + '/' + str(dpg.get_value(
+        "MyYear")) + '&date_req2=' + str(y) + '/' + str(yy) + '/' + str(
+        dpg.get_value("MyYear2")) + '&VAL_NM_RQ=' + str(id)
+    print(url_1)
+    res = urllib.request.urlopen(str(url_1))
+    dom = xml.dom.minidom.parse(res)
+    dom.normalize()
+    nodeArray = dom.getElementsByTagName("Record")
+    curs_list = []
+    for node in nodeArray:
+        curs_list.append(node.getAttribute('Date'))
+    return print(curs_list)
+
+
+def CreateGraphWindow():
+    sindatay = ProcessForGraph()
+    sindatax = [i for i in range(1, len(sindatay))]
+    with dpg.window(label="Tutorial"):
+        # create plot
+        with dpg.plot(label="Line Series", height=400, width=400):
+            # REQUIRED: create x and y axes
+            dpg.add_plot_axis(dpg.mvXAxis, label="x")
+            dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="y_axis")
+            # series belong to a y axis
+            dpg.add_line_series(sindatax, sindatay, parent="y_axis")
+
 
 def GetCurrencyIdList(cur):
     u = 'http://www.cbr.ru/scripts/XML_val.asp?d=0'
@@ -69,243 +169,16 @@ def GetCurrencyIdList(cur):
                 currency_id.update({list(currency_id)[-1]: value})
     return currency_id.get(cur)
 
-def SwitchDate():
-    now = datetime.now()
-    if r_var.get() == 0:
-        print('МЕНЯЕМ МАСШТАБ')
-        x = []
-        for i in range(4):
-            delta = dateutil.relativedelta.relativedelta(days=7)
-            x.append(
-                f'{(now - delta).strftime("%d")}.{(now - delta).strftime("%m")}.{(now - delta).year}-{now.strftime("%d")}.{now.strftime("%m")}.{now.year}')
-            now = now - delta
-        date_switch['values'] = x
-    if r_var.get() == 1:
-        print('МЕНЯЕМ МАСШТАБ')
-        x = []
-        for i in range(4):
-            delta = dateutil.relativedelta.relativedelta(months=1)
-            x.append(f'{(now-delta).strftime("%m")}')
-            now = now - delta
-        date_switch['values'] = x
-    if r_var.get() == 2:
-        print('МЕНЯЕМ МАСШТАБ')
-        x = []
-        delta = dateutil.relativedelta.relativedelta(months=1)
-        while (now).strftime("%m") != '01':
-            now = now - delta
-        for i in range(4):
-            delta = dateutil.relativedelta.relativedelta(months=3)
-            x.append(f'{(now).strftime("%m")}')
-            now = now + delta
-        date_switch['values'] = x
-    if r_var.get() == 3:
-        print('МЕНЯЕМ МАСШТАБ')
-        x = []
-        for i in range(4):
-            delta = dateutil.relativedelta.relativedelta(years=1)
-            x.append(f"{now.year}")
-            now = now - delta
-        date_switch['values'] = x
-
-def GetCurrencyCurs_1():
-    cur = cur_switch.get()
-    id = GetCurrencyIdList(cur)
-    dat = date_switch.get().split('-')
-    date_req = []
-    for i in dat:
-        date_req.append(i.replace('.', '/'))
-    u = 'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=' + date_req[0] + '&date_req2=' + date_req[1] + '&VAL_NM_RQ=' + str(id)
-    print(u)
-    res = urllib.request.urlopen(str(u))
-    dom = xml.dom.minidom.parse(res)
-    dom.normalize()
-    nodeArray = dom.getElementsByTagName("Record")
-    curs_list = []
-    for node in nodeArray:
-        childList = node.childNodes
-        for child in childList:
-            if child.nodeName == 'Value':
-                curs_list.append(float(child.childNodes[0].nodeValue.replace(',', '.')))
-    print(curs_list)
-    return curs_list
-
-def GetCurrencyCurs_2():
-    cur = cur_switch.get()
-    month = date_switch.get()
-    if int(month) % 2 == 1:
-        day = '31'
-    elif (int(month) % 2 == 0) & (int(month) != 2):
-        day = '30'
-    elif month == '02':
-        day = '28'
-    id = GetCurrencyIdList(cur)
-    u = 'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=' + '01/' + month + '/2021' + '&date_req2=' + day + '/' + month + '/2021' + '&VAL_NM_RQ=' + str(id)
-    print(u)
-    res = urllib.request.urlopen(str(u))
-    dom = xml.dom.minidom.parse(res)
-    dom.normalize()
-    nodeArray = dom.getElementsByTagName("Record")
-    curs_list = []
-    for node in nodeArray:
-        childList = node.childNodes
-        for child in childList:
-            if child.nodeName == 'Value':
-                curs_list.append(float(child.childNodes[0].nodeValue.replace(',', '.')))
-    print(curs_list)
-    return curs_list
-
-def GetCurrencyCurs_3():
-    cur = cur_switch.get()
-    month = date_switch.get()
-    if int(month) == 1:
-        month2 = '0' + str(int(date_switch.get()) + 2)
-    elif int(month) == 4:
-        month2 = '0' + str(int(date_switch.get()) + 2)
-    elif int(month) == 7:
-        month2 = '0' + str(int(date_switch.get()) + 2)
-    elif int(month) == 10:
-        month2 = str(int(date_switch.get()) + 2)
-    id = GetCurrencyIdList(cur)
-    u = 'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=' + '01/' + month + '/2021' + '&date_req2=' + '31/' + month2 + '/2021' + '&VAL_NM_RQ=' + str(id)
-    print(u)
-    res = urllib.request.urlopen(str(u))
-    dom = xml.dom.minidom.parse(res)
-    dom.normalize()
-    nodeArray = dom.getElementsByTagName("Record")
-    curs_list = []
-    for node in nodeArray:
-        childList = node.childNodes
-        for child in childList:
-            if child.nodeName == 'Value':
-                curs_list.append(float(child.childNodes[0].nodeValue.replace(',', '.')))
-    print(curs_list)
-    return curs_list
-
-def GetCurrencyCurs_4():
-    cur = cur_switch.get()
-    year = date_switch.get()
-    id = GetCurrencyIdList(cur)
-    if year == now.year:
-        u = 'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=' + '01/01/' + str(
-            now.year) + '&date_req2=' + '0' + str(now.day) + '/' + '0' + str(now.month) + '/' + str(
-            now.year) + '&VAL_NM_RQ=' + str(id)
-    else:
-        u = 'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=' + '01/01/' + str(
-            year) + '&date_req2=' + '31/12/' + str(year) + '&VAL_NM_RQ=' + str(id)
-    print(u)
-    res = urllib.request.urlopen(str(u))
-    dom = xml.dom.minidom.parse(res)
-    dom.normalize()
-    nodeArray = dom.getElementsByTagName("Record")
-    curs_list = []
-    for node in nodeArray:
-        childList = node.childNodes
-        for child in childList:
-            if child.nodeName == 'Value':
-                curs_list.append(float(child.childNodes[0].nodeValue.replace(',', '.')))
-    print(curs_list)
-    return curs_list
-
-def CreatePlot():
-    if r_var.get() == 0: # недели
-        x = []
-        y = GetCurrencyCurs_1()
-        print(y)
-        for i in range(len(y)):
-            x.append(i)
-        print(x)
-    elif r_var.get() == 1: # месяцы
-        x = []
-        y = GetCurrencyCurs_2()
-        print(y)
-        for i in range(len(y)):
-            x.append(i)
-        print(x)
-    elif r_var.get() == 2: # кварталы
-        x = []
-        y = GetCurrencyCurs_3()
-        print(y)
-        for i in range(len(y)):
-            x.append(i)
-        print(x)
-    elif r_var.get() == 3:  # годы
-        x = []
-        y = GetCurrencyCurs_4()
-        print(y)
-        date = datetime.now()
-        for i in range(len(y)):
-            x.append(i)
-        print(x)
-    matplotlib.use('TkAgg')
-    fig = plt.figure()
-    canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=tab2)
-    plot_widget = canvas.get_tk_widget()
-    fig.clear()
-    plt.plot(x, y)
-    plt.grid()
-    plot_widget.grid(column=4, row=4)
-
 def Convert():
-    quant = float(quantity.get())
-    First_Cur = comboFirstCur.get()
-    Second_Cur = comboSecondCur.get()
-    First_Cur = float(currency.get(First_Cur))
-    Second_Cur = float(currency.get(Second_Cur))
-    res = (First_Cur/Second_Cur)*quant
-    lbl['text']=str(res)
+    First = currency[dpg.get_value("FirstVal")]
+    FirstVal = dpg.get_value("FirstVal")
+    FloatValue = dpg.get_value("FloatVal")
+    Second = currency[dpg.get_value("SecVal")]
+    SecondVal = dpg.get_value("SecVal")
 
-top_frame = Frame(tab1)
-bottom_frame = Frame(tab1)
-right_topframe = Frame(tab1)
-button_frame = Frame(tab1)
-lbl_frame = Frame(tab1)
-comboFirstCur = ttk.Combobox(top_frame)
-comboSecondCur = ttk.Combobox(bottom_frame)
-quantity = ttk.Entry(right_topframe)
-lbl = Label(lbl_frame)
-top_frame.grid(column=0)
-bottom_frame.grid(column=0)
-right_topframe.grid(column=1, row=0, padx=20)
-button_frame.grid(column=2, row=0, padx=20)
-lbl_frame.grid(column=1, row=1, ipadx=50)
-button = Button(button_frame, text='Конвертировать', command=Convert)
-comboFirstCur["values"] = keylog
-comboSecondCur["values"] = keylog
-comboFirstCur.grid(ipadx=30, pady=20)
-comboSecondCur.grid(ipadx=30, pady=20)
-quantity.grid()
-button.grid()
-lbl.grid(padx=15)
-tab_control.pack(expand=1, fill='both')
+    Res = float(First) / float(Second) * FloatValue
+    Res = "{:.2f}".format(Res)
+    dpg.set_value("ConvRes", f'{FloatValue} {FirstVal} ~ {Res} {SecondVal}')
 
-top_left_lbl = Label(tab2, text='Валюта')
-top_center_lbl = Label(tab2, text='Период')
-top_right_lbl = Label(tab2, text='Выбор периода')
-top_left_lbl.grid(column=0, row=0, ipadx=15)
-top_center_lbl.grid(column=1, row=0, ipadx=15)
-top_right_lbl.grid(column=2, row=0, ipadx=15)
-plot_but = Button(tab2, text='Построить график', command=CreatePlot)
-plot_but.grid(column=0, row=3)
-top_left_frame = Frame(tab2)
-top_center_frame = Frame(tab2)
-top_right_frame = Frame(tab2)
-cur_switch = ttk.Combobox(top_left_frame)
-cur_switch['values'] = keylog
-cur_switch.grid()
-date_switch = ttk.Combobox(top_right_frame)
-top_left_frame.grid(column=0, row=1)
-top_right_frame.grid(column=2, row=1)
-r_var = IntVar()
-r_var.set(0)
-r1 = Radiobutton(top_center_frame, text='Неделя', variable=r_var, value=0, command=SwitchDate)
-r2 = Radiobutton(top_center_frame, text='Месяц', variable=r_var, value=1, command=SwitchDate)
-r3 = Radiobutton(top_center_frame, text='Квартал', variable=r_var, value=2, command=SwitchDate)
-r4 = Radiobutton(top_center_frame, text='Год', variable=r_var, value=3, command=SwitchDate)
-date_switch.grid()
-r1.grid()
-r2.grid()
-r3.grid()
-r4.grid()
-top_center_frame.grid(column=1, row=1)
-window.mainloop()
+if __name__ == "__main__":
+    App()
