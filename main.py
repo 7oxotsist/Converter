@@ -26,10 +26,17 @@ def CreateMainMenu():
             dpg.add_text(tag="ConvRes")
 
 
+<<<<<<< HEAD
     with dpg.window(label="", pos=(0,320), height=240, width=336, no_title_bar=True, no_resize=True, no_close=True, no_scrollbar=True, no_move=True):
         pass
 
     with dpg.window(label="", pos=(336,0), height=560, width=448, no_title_bar=True, no_resize=True, no_close=True, no_scrollbar=True, no_move=True):
+=======
+    with dpg.window(label="", pos=(0,320), height=240, width=336, no_title_bar=True):
+        pass
+
+    with dpg.window(label="", pos=(336,0), height=560, width=448, no_title_bar=True):
+>>>>>>> main
         pass
     dpg.create_viewport(title=' ', width=800, height=599)
     dpg.setup_dearpygui()
@@ -64,6 +71,28 @@ def Process():
     for key in currency.keys():
         keylog.append(key)
 
+<<<<<<< HEAD
+=======
+    #print(keylog,currency)
+
+# def GetCurrencyIdList(cur):
+#     u = 'http://www.cbr.ru/scripts/XML_val.asp?d=0'
+#     res = urllib.request.urlopen(str(u))
+#     dom = xml.dom.minidom.parse(res)
+#     dom.normalize()
+#     nodeArray = dom.getElementsByTagName("Item")
+#     currency_id = {}
+#     for node in nodeArray:
+#         childList = node.childNodes
+#         for child in childList:
+#             if child.nodeName == 'Name':
+#                 currency_id.update({child.childNodes[0].nodeValue: 0})
+#             if child.nodeName == 'ParentCode':
+#                 value = child.childNodes[0].nodeValue.replace('    ', '')
+#                 currency_id.update({list(currency_id)[-1]: value})
+#     return currency_id.get(cur)
+
+>>>>>>> main
 def Convert():
     First = currency[dpg.get_value("FirstVal")]
     FirstVal = dpg.get_value("FirstVal")
