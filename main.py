@@ -16,14 +16,12 @@ def CreateMainMenu():
     width, height, channels, data = dpg.load_image("Resources/Arrow-down.png")
     with dpg.texture_registry():
         dpg.add_static_texture(width=width, height=height, default_value=data, tag="arrow")
-    #
-    # with dpg.window():
-    #     with dpg.menu_bar():
-    #         dpg.add_menu_item(label="Converter", callback=CreateConverterWindow())
-    #         dpg.add_menu_item(label="Graph", callback=CreateGraph())
+    with dpg.theme() as global_theme:
+        with dpg.theme_component(dpg.mvThemeCol_TabActive, enabled_state=False):
+            dpg.add_theme_color(dpg.mvThemeCol_TabActive, [255, 0, 0])
+    dpg.bind_theme(global_theme)
 
-
-    with dpg.window(label="Converter", width=320, height=320, no_resize=True, no_close=True, no_scrollbar=True, no_move=True, autosize=True):
+    with dpg.window(label="Конвертер", width=320, height=320, no_resize=True, no_close=True, no_scrollbar=True, no_move=True, autosize=True, no_collapse=True):
         with dpg.group():
             dpg.add_combo(items=keylog, tag="FirstVal",)
             dpg.add_input_float(tag="FloatVal")
@@ -33,7 +31,7 @@ def CreateMainMenu():
             dpg.add_text(tag="ConvRes")
 
 
-    with dpg.window(label="", pos=(0, 320), height=240, width=336, no_title_bar=True, no_resize=True, no_close=True,
+    with dpg.window(label="Настройка графиков", pos=(0, 320), height=240, width=336, no_resize=True, no_close=True, no_collapse=True,
                     no_scrollbar=True, no_move=True):
         global plot
         x = datetime.now()
@@ -52,11 +50,11 @@ def CreateMainMenu():
         dpg.add_button(label="Рисуй!", callback=CreateGraphWindow)
         dpg.add_button(label="Очистить окно графиков", callback=clean)
 
-    with dpg.window(tag="graphwin", pos=(336, 0), height=560, width=448, no_title_bar=True, no_resize=True, no_close=True,
+    with dpg.window(label="Графики",tag="graphwin", pos=(336, 0), height=560, width=448, no_title_bar=False, no_resize=True, no_close=True, no_collapse=True,
                     no_scrollbar=True, no_move=True):
         pass
 
-    dpg.create_viewport(title=' ', width=800, height=599)
+    dpg.create_viewport(title='Converter', width=800, height=599, resizable=False, clear_color=[25,25,25])
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.start_dearpygui()
