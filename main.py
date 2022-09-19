@@ -16,18 +16,16 @@ def CreateMainMenu():
     width, height, channels, data = dpg.load_image("Resources/Arrow-down.png")
     with dpg.texture_registry():
         dpg.add_static_texture(width=width, height=height, default_value=data, tag="arrow")
+    #
+    # with dpg.window():
+    #     with dpg.menu_bar():
+    #         dpg.add_menu_item(label="Converter", callback=CreateConverterWindow())
+    #         dpg.add_menu_item(label="Graph", callback=CreateGraph())
 
-<<<<<<< HEAD
-=======
-    with dpg.window(tag="Primary Window"):
-        with dpg.menu_bar():
-            dpg.add_menu_item(label="Cockverter", callback=CreateConverterWindow())
-            dpg.add_menu_item(label="Graph", callback=CreateGraph())
->>>>>>> main
 
     with dpg.window(label="Converter", width=320, height=320, no_resize=True, no_close=True, no_scrollbar=True, no_move=True, autosize=True):
         with dpg.group():
-            dpg.add_combo(items=keylog, tag="FirstVal")
+            dpg.add_combo(items=keylog, tag="FirstVal",)
             dpg.add_input_float(tag="FloatVal")
             dpg.add_image("arrow", indent=100)
             dpg.add_combo(items=keylog, tag="SecVal")
@@ -35,39 +33,9 @@ def CreateMainMenu():
             dpg.add_text(tag="ConvRes")
 
 
-<<<<<<< HEAD
-    with dpg.window(label="", pos=(0,320), height=240, width=336, no_title_bar=True, no_resize=True, no_close=True, no_scrollbar=True, no_move=True):
-        pass
-
-    with dpg.window(label="", pos=(336,0), height=560, width=448, no_title_bar=True, no_resize=True, no_close=True, no_scrollbar=True, no_move=True):
-=======
-    with dpg.window(label="", pos=(0,320), height=240, width=336, no_title_bar=True):
-        pass
-
-    with dpg.window(label="", pos=(336,0), height=560, width=448, no_title_bar=True):
->>>>>>> main
-        pass
-    dpg.create_viewport(title=' ', width=800, height=599)
-    dpg.setup_dearpygui()
-    dpg.show_viewport()
-    dpg.start_dearpygui()
-    dpg.destroy_context()
-
-<<<<<<< HEAD
-=======
-
-def CreateConverterWindow():
-    with dpg.window(label="Converter", width=320, height=320, tag="Conv"):
-        dpg.add_combo(items=keylog, tag="FirstVal")
-        dpg.add_input_float(tag="FloatVal")
-        dpg.add_image("arrow")
-        dpg.add_combo(items=keylog, tag="SecVal")
-        dpg.add_text(tag="ConvRes")
-        dpg.add_button(label="Convert", callback=Convert)
-
-
-def CreateGraph():
-    with dpg.window(label="Graph", width=320, height=320, tag="Graph"):
+    with dpg.window(label="", pos=(0, 320), height=240, width=336, no_title_bar=True, no_resize=True, no_close=True,
+                    no_scrollbar=True, no_move=True):
+        global plot
         x = datetime.now()
         nowyear = x.year
         dpg.add_combo(items=keylog, tag="MyFirstVal")
@@ -82,7 +50,21 @@ def CreateGraph():
             dpg.add_combo(items=[i for i in range(1, 13)], width=75, tag="MyMonth2")
             dpg.add_combo(items=[i for i in range(1990, nowyear + 1)], width=75, tag="MyYear2")
         dpg.add_button(label="Рисуй!", callback=CreateGraphWindow)
+        dpg.add_button(label="Очистить окно графиков", callback=clean)
 
+    with dpg.window(tag="graphwin", pos=(336, 0), height=560, width=448, no_title_bar=True, no_resize=True, no_close=True,
+                    no_scrollbar=True, no_move=True):
+        pass
+
+    dpg.create_viewport(title=' ', width=800, height=599)
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    dpg.start_dearpygui()
+    dpg.destroy_context()
+
+
+def clean():
+    dpg.delete_item("graphwin", children_only=True)
 
 def ProcessForGraph():
     MyValue = dpg.get_value("MyFirstVal")
@@ -146,17 +128,15 @@ def ProcessX():
 def CreateGraphWindow():
     sindatay = ProcessForGraph()
     sindatax = [i for i in range(1, len(sindatay))]
-    with dpg.window(label="Tutorial"):
-        # create plot
-        with dpg.plot(label="Line Series", height=400, width=400):
-            # REQUIRED: create x and y axes
-            dpg.add_plot_axis(dpg.mvXAxis, label="x")
-            dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="y_axis")
-            # series belong to a y axis
-            dpg.add_line_series(sindatax, sindatay, parent="y_axis")
+    global plot
+    with dpg.plot(label=dpg.get_value("MyFirstVal"),parent="graphwin", height=400, width=400) as plot:
+        # REQUIRED: create x and y axes
+        dpg.add_plot_axis(dpg.mvXAxis)
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis)
+        # series belong to a y axis
+        dpg.add_line_series(sindatax, sindatay, parent=y_axis)
 
 
->>>>>>> main
 def Process():
     global keylog, currency
     now = datetime.now()
@@ -184,37 +164,23 @@ def Process():
     for key in currency.keys():
         keylog.append(key)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    #print(keylog,currency)
-=======
-    print(keylog, currency)
+def GetCurrencyIdList(cur):
+    u = 'http://www.cbr.ru/scripts/XML_val.asp?d=0'
+    res = urllib.request.urlopen(str(u))
+    dom = xml.dom.minidom.parse(res)
+    dom.normalize()
+    nodeArray = dom.getElementsByTagName("Item")
+    currency_id = {}
+    for node in nodeArray:
+        childList = node.childNodes
+        for child in childList:
+            if child.nodeName == 'Name':
+                currency_id.update({child.childNodes[0].nodeValue: 0})
+            if child.nodeName == 'ParentCode':
+                value = child.childNodes[0].nodeValue.replace('    ', '')
+                currency_id.update({list(currency_id)[-1]: value})
+    return currency_id.get(cur)
 
->>>>>>> main
-
-# def GetCurrencyIdList(cur):
-#     u = 'http://www.cbr.ru/scripts/XML_val.asp?d=0'
-#     res = urllib.request.urlopen(str(u))
-#     dom = xml.dom.minidom.parse(res)
-#     dom.normalize()
-#     nodeArray = dom.getElementsByTagName("Item")
-#     currency_id = {}
-#     for node in nodeArray:
-#         childList = node.childNodes
-#         for child in childList:
-#             if child.nodeName == 'Name':
-#                 currency_id.update({child.childNodes[0].nodeValue: 0})
-#             if child.nodeName == 'ParentCode':
-#                 value = child.childNodes[0].nodeValue.replace('    ', '')
-#                 currency_id.update({list(currency_id)[-1]: value})
-#     return currency_id.get(cur)
-
-<<<<<<< HEAD
->>>>>>> main
-=======
-
->>>>>>> main
 def Convert():
     First = currency[dpg.get_value("FirstVal")]
     FirstVal = dpg.get_value("FirstVal")
